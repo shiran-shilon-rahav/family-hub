@@ -1,0 +1,150 @@
+.events-container {
+  padding: 2rem;
+  direction: rtl;
+}
+
+.events-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.events-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.events-container h2 {
+  text-align: right;
+  color: #333;
+  font-size: 2rem;
+  margin: 0;
+}
+
+.add-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-button:hover {
+  background-color: #45a049;
+  transform: translateY(-2px);
+}
+
+.refresh-toggle {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.refresh-toggle:hover {
+  background-color: #1976D2;
+  transform: translateY(-2px);
+}
+
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.event-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.event-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.event-info h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.25rem;
+}
+
+.event-info p {
+  margin: 0.5rem 0 0;
+  color: #666;
+}
+
+.edit-button {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-button:hover {
+  background-color: #1976D2;
+  transform: translateY(-2px);
+}
+
+.no-events {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+@media (max-width: 600px) {
+  .events-container {
+    padding: 1rem;
+  }
+
+  .events-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .events-container h2 {
+    text-align: center;
+  }
+
+  .events-controls {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .add-button,
+  .refresh-toggle {
+    width: 100%;
+  }
+
+  .event-card {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .edit-button {
+    width: 100%;
+  }
+} 
