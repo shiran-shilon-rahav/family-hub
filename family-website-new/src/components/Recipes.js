@@ -3,9 +3,9 @@ import { Utensils, ExternalLink, Edit, Link, Trash2, RefreshCw } from 'lucide-re
 import axios from 'axios';
 
 // כתובת השרת קבועה - שימוש בכתובת IP של הרשת המקומית במקום localhost
-const SERVER_URL = window.location.hostname === 'localhost' 
-  ? `http://${window.location.hostname}:3001` 
-  : `http://${window.location.hostname}:3001`;
+const SERVER_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://your-production-server.com' 
+  : 'http://localhost:3001';
 
 const Recipes = () => {
   const [showUploadForm, setShowUploadForm] = useState(false);
@@ -15,6 +15,8 @@ const Recipes = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(Date.now());
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [recipeToDelete, setRecipeToDelete] = useState(null);
 
   // פונקציה לטעינת המתכונים מהשרת
   const loadRecipes = async (showLoadingState = true) => {
@@ -23,9 +25,9 @@ const Recipes = () => {
         setLoading(true);
       }
       
-      const response = await fetch(`${SERVER_URL}/recipes?t=${Date.now()}`);
+      const response = await axios.get(`${SERVER_URL}/recipes`);
       if (response.ok) {
-        const data = await response.json();
+        const data = response.data;
         setRecipes(data || []);
         setLastUpdate(Date.now());
       } else {
@@ -196,7 +198,7 @@ const Recipes = () => {
               className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 text-sm sm:px-3 sm:py-2 sm:text-base rounded-md flex items-center"
               title="רענן מתכונים"
             >
-              <RefreshCw size={16} className="ml-1" /> רענן
+              {React.createElement(RefreshCw, { size: 16, className: "ml-1" })} רענן
             </button>
             <button
               onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
@@ -232,7 +234,7 @@ const Recipes = () => {
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
-                  <Link size={16} className="ml-2" /> העלאת כתובת URL
+                  {React.createElement(Link, { size: 16, className: "ml-2" })} העלאת כתובת URL
                 </button>
                 <button
                   type="button"
@@ -243,7 +245,7 @@ const Recipes = () => {
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
-                  <Edit size={16} className="ml-2" /> הכן מתכון בעצמך
+                  {React.createElement(Edit, { size: 16, className: "ml-2" })} הכן מתכון בעצמך
                 </button>
               </div>
             </div>
@@ -314,13 +316,16 @@ const Recipes = () => {
               <div className="flex justify-center gap-4">
                 <button
                   className="px-6 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-                  onClick={() => handleDeleteRecipe(showDeleteConfirm)}
+                  onClick={() => handleDeleteRecipe(recipeToDelete)}
                 >
                   מחק
                 </button>
                 <button
                   className="px-6 py-2 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
-                  onClick={() => setShowDeleteConfirm(null)}
+                  onClick={() => {
+                    setShowDeleteConfirm(null);
+                    setRecipeToDelete(null);
+                  }}
                 >
                   ביטול
                 </button>
@@ -361,11 +366,14 @@ const Recipes = () => {
                   {/* כפתור מחיקה */}
                   {!recipe.temporary && (
                     <button
-                      onClick={() => setShowDeleteConfirm(recipe.id)}
+                      onClick={() => {
+                        setRecipeToDelete(recipe);
+                        setShowDeleteConfirm(true);
+                      }}
                       className="absolute top-2 left-2 text-gray-400 hover:text-red-500 transition-colors"
                       title="מחק מתכון"
                     >
-                      <Trash2 size={18} />
+                      {React.createElement(Trash2, { size: 18 })}
                     </button>
                   )}
                   
@@ -385,7 +393,7 @@ const Recipes = () => {
                       rel="noopener noreferrer"
                       className="text-blue-500 hover:text-blue-700 flex items-center"
                     >
-                      צפה במתכון <ExternalLink size={16} className="mr-1" />
+                      צפה במתכון {React.createElement(ExternalLink, { size: 16, className: "mr-1" })}
                     </a>
                   )}
                 </div>

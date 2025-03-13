@@ -247,7 +247,8 @@ const loadCreationsData = () => {
   return {
     '3d': [],
     'lego': [],
-    'drawings': []
+    'drawings': [],
+    'technoda': []
   };
 };
 
@@ -730,41 +731,72 @@ app.get('/creations/:category', (req, res) => {
 });
 
 // העלאת יצירה חדשה
-app.post('/upload-creation', upload.single('image'), (req, res) => {
+app.post('/upload-creation', upload.single('file'), (req, res) => {
   try {
+    console.log('קיבלתי בקשת העלאת יצירה:', req.body);
+    console.log('קובץ שהתקבל:', req.file);
+    
     if (!req.file) {
+      console.error('לא התקבל קובץ');
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
     const category = req.body.category;
+    console.log('קטגוריה שהתקבלה:', category);
+    
+    if (!category) {
+      console.error('לא התקבלה קטגוריה');
+      // מחיקת הקובץ אם לא התקבלה קטגוריה
+      fs.unlinkSync(path.join(uploadDir, req.file.filename));
+      return res.status(400).json({ error: 'Category is required' });
+    }
+    
     const data = loadCreationsData();
+    console.log('נתוני יצירות שנטענו:', data);
     
     if (!data[category]) {
+      console.error('קטגוריה לא קיימת:', category);
       // מחיקת הקובץ אם הקטגוריה לא קיימת
       fs.unlinkSync(path.join(uploadDir, req.file.filename));
       return res.status(404).json({ error: 'Category not found' });
     }
 
     const creation = {
-      id: Date.now(),
-      url: `/uploads/${req.file.filename}`,
+      id: Date.now().toString(),
+      path: `uploads/${req.file.filename}`,
+      name: req.file.originalname,
       timestamp: Date.now()
     };
+    
+    console.log('יצירה חדשה:', creation);
 
     data[category].push(creation);
     saveCreationsData(data);
     
+    console.log('יצירה נשמרה בהצלחה');
     res.json(creation);
   } catch (error) {
-    console.error('שגיאה בהעלאת היצירה:', error);
-    res.status(500).json({ error: 'Failed to upload creation' });
+    console.error('שגיאה בהעלאת יצירה:', error);
+    
+    // ניסיון למחוק את הקובץ במקרה של שגיאה
+    if (req.file) {
+      try {
+        fs.unlinkSync(path.join(uploadDir, req.file.filename));
+      } catch (e) {
+        console.error('שגיאה במחיקת קובץ לאחר כישלון בהעלאה:', e);
+      }
+    }
+    
+    res.status(500).json({ error: 'Failed to upload creation', details: error.message });
   }
 });
 
 // מחיקת יצירה
 app.delete('/creations/:id', (req, res) => {
   try {
-    const creationId = parseInt(req.params.id);
+    const creationId = req.params.id;
+    console.log('מנסה למחוק יצירה עם ID:', creationId);
+    
     const data = loadCreationsData();
     let found = false;
     
@@ -773,10 +805,12 @@ app.delete('/creations/:id', (req, res) => {
       const index = data[category].findIndex(creation => creation.id === creationId);
       if (index !== -1) {
         const creation = data[category][index];
+        console.log('נמצאה יצירה למחיקה בקטגוריה:', category, 'יצירה:', creation);
         
         // מחיקת הקובץ
         try {
-          fs.unlinkSync(path.join(__dirname, creation.url));
+          fs.unlinkSync(path.join(__dirname, creation.path));
+          console.log('הקובץ נמחק בהצלחה:', creation.path);
         } catch (e) {
           console.error('שגיאה במחיקת קובץ:', e);
         }
@@ -789,10 +823,12 @@ app.delete('/creations/:id', (req, res) => {
     }
     
     if (!found) {
+      console.error('יצירה לא נמצאה:', creationId);
       return res.status(404).json({ error: 'Creation not found' });
     }
     
     saveCreationsData(data);
+    console.log('יצירה נמחקה בהצלחה');
     res.json({ success: true });
   } catch (error) {
     console.error('שגיאה במחיקת היצירה:', error);

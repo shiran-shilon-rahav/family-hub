@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Palette, UploadIcon, X, Trash2, Package, Blocks, PaintBucket, Lightbulb, Maximize2, Minimize2 } from 'lucide-react';
+import { Palette, UploadIcon, X, Trash2, Package, Blocks, PaintBucket, Lightbulb, Maximize2, Minimize2, Shapes, Brush } from 'lucide-react';
 import axios from 'axios';
 
 // כתובת השרת קבועה
@@ -9,14 +9,14 @@ const SERVER_URL = process.env.NODE_ENV === 'production'
 
 // קטגוריות היצירות
 const CREATION_CATEGORIES = [
-  { id: '3d', name: 'יצירות תלת-מימד', icon: <Package className="w-6 h-6" /> },
-  { id: 'lego', name: 'יצירות לגו', icon: <Blocks className="w-6 h-6" /> },
-  { id: 'drawings', name: 'ציורים', icon: <PaintBucket className="w-6 h-6" /> },
-  { id: 'technoda', name: 'יצירות טכנודע', icon: <Lightbulb className="w-6 h-6" /> }
+  { id: '3d', name: 'יצירות תלת-מימד', icon: Package },
+  { id: 'lego', name: 'יצירות לגו', icon: Shapes },
+  { id: 'drawings', name: 'ציורים', icon: Brush },
+  { id: 'technoda', name: 'יצירות טכנודע', icon: Lightbulb }
 ];
 
 const Creations = () => {
-  const [selectedCategory, setSelectedCategory] = useState('3d');
+  const [selectedCategory, setSelectedCategory] = useState(CREATION_CATEGORIES[0].id);
   const [creations, setCreations] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -47,11 +47,8 @@ const Creations = () => {
 
   const loadCreations = async (category) => {
     try {
-      const response = await fetch(`${SERVER_URL}/creations/${category}`);
-      if (response.ok) {
-        const data = await response.json();
-        setCreations(data || []);
-      }
+      const response = await axios.get(`${SERVER_URL}/creations/${category}`);
+      setCreations(response.data);
     } catch (error) {
       console.error('שגיאה בטעינת היצירות:', error);
       setCreations([]);
@@ -59,70 +56,53 @@ const Creations = () => {
   };
 
   const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('הקובץ גדול מדי. הגודל המקסימלי הוא 5MB');
+      return;
+    }
+
+    if (!selectedCategory) {
+      alert('נא לבחור קטגוריה לפני העלאת קובץ');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('category', selectedCategory);
+
     try {
-      if (!event.target.files || event.target.files.length === 0) {
-        alert('אנא בחר תמונה');
-        return;
-      }
-
-      if (!selectedCategory) {
-        alert('אנא בחר קטגוריה לפני העלאת תמונה');
-        return;
-      }
-
-      const file = event.target.files[0];
-      
-      // בדיקת גודל הקובץ
-      if (file.size > 50 * 1024 * 1024) {
-        const confirmLargeFile = window.confirm('הקובץ גדול מ-50MB. העלאה עלולה להיכשל. האם להמשיך?');
-        if (!confirmLargeFile) {
-          return;
-        }
-      }
-
-      const formData = new FormData();
-      formData.append('image', file);
-      formData.append('category', selectedCategory);
-
-      alert('מעלה תמונה... אנא המתן');
-      
-      const response = await fetch(`${SERVER_URL}/upload-creation`, {
-        method: 'POST',
-        body: formData
+      console.log('שולח בקשת העלאה עם הנתונים:', {
+        file: file.name,
+        size: file.size,
+        category: selectedCategory
       });
-
-      if (!response.ok) {
-        throw new Error(`שגיאת שרת: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setCreations(prev => [...prev, data]);
       
-      if (event.target) {
-        event.target.value = '';
-      }
-
-      alert('התמונה הועלתה בהצלחה!');
+      const response = await axios.post(`${SERVER_URL}/upload-creation`, formData);
+      console.log('תשובה מהשרת:', response.data);
+      
+      loadCreations(selectedCategory);
     } catch (error) {
-      console.error('שגיאה בהעלאת התמונה:', error);
-      alert('שגיאה בהעלאת התמונה: ' + error.message);
+      console.error('שגיאה בהעלאת הקובץ:', error);
+      alert('שגיאה בהעלאת הקובץ: ' + (error.response?.data?.error || error.message));
     }
   };
 
-  const handleDeleteCreation = async (creationId) => {
+  const handleDeleteCreation = async (creation) => {
     try {
-      const response = await fetch(`${SERVER_URL}/creations/${creationId}`, {
-        method: 'DELETE'
-      });
-
-      if (response.ok) {
-        setCreations(prev => prev.filter(creation => creation.id !== creationId));
-        setSelectedImage(null);
-        setShowDeleteConfirm(false);
-      }
+      console.log('מנסה למחוק יצירה:', creation);
+      
+      const response = await axios.delete(`${SERVER_URL}/creations/${creation.id}`);
+      console.log('תשובה מהשרת למחיקה:', response.data);
+      
+      loadCreations(selectedCategory);
+      setShowDeleteConfirm(false);
+      setCreationToDelete(null);
     } catch (error) {
       console.error('שגיאה במחיקת היצירה:', error);
-      alert('שגיאה במחיקת היצירה');
+      alert('שגיאה במחיקת היצירה: ' + (error.response?.data?.error || error.message));
     }
   };
 
@@ -161,14 +141,14 @@ const Creations = () => {
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
-              className={`p-4 rounded-lg flex items-center justify-center gap-2 transition-all ${
+              className={`flex items-center px-4 py-2 rounded-full transition-all duration-300 ${
                 selectedCategory === category.id
-                  ? 'bg-yellow-500 text-white shadow-lg transform -translate-y-1'
-                  : 'bg-white hover:bg-yellow-100'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-200 hover:bg-purple-200'
               }`}
             >
-              {category.icon}
-              <span className="font-medium">{category.name}</span>
+              {React.createElement(category.icon, { className: "ml-2" })}
+              {category.name}
             </button>
           ))}
         </div>
@@ -203,7 +183,7 @@ const Creations = () => {
                   className="relative group aspect-square bg-white rounded-lg shadow-md overflow-hidden"
                 >
                   <img
-                    src={`${SERVER_URL}${creation.url}`}
+                    src={`${SERVER_URL}/${creation.path}`}
                     alt={`יצירה ${creation.id}`}
                     className="w-full h-full object-cover"
                     onClick={() => openImageViewer(creation)}
@@ -243,7 +223,7 @@ const Creations = () => {
                 <X className="w-8 h-8" />
               </button>
               <img
-                src={`${SERVER_URL}${viewingImage.url}`}
+                src={`${SERVER_URL}/${viewingImage.path}`}
                 alt={`יצירה ${viewingImage.id}`}
                 className="w-full h-auto rounded-lg"
                 onClick={e => e.stopPropagation()}
@@ -262,7 +242,7 @@ const Creations = () => {
                 <button
                   className="px-6 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
                   onClick={() => {
-                    handleDeleteCreation(creationToDelete.id);
+                    handleDeleteCreation(creationToDelete);
                     setShowDeleteConfirm(false);
                   }}
                 >

@@ -3,9 +3,9 @@ import { Video, UploadIcon, X, Trash2 } from 'lucide-react';
 import axios from 'axios';
 
 // כתובת השרת קבועה - שימוש בכתובת IP של הרשת המקומית במקום localhost
-const SERVER_URL = window.location.hostname === 'localhost' 
-  ? `http://${window.location.hostname}:3001` 
-  : `http://${window.location.hostname}:3001`;
+const SERVER_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://your-production-server.com' 
+  : 'http://localhost:3001';
 
 // נתוני המשפחה ההתחלתיים
 const initialFamilyMembers = [
@@ -21,20 +21,17 @@ const initialFamilyMembers = [
 const Videos = () => {
   const loadSavedData = async () => {
     try {
-      // טוען את כל המידע מהשרת
-      const response = await axios.get(`${SERVER_URL}/family-members-videos`);
-      // מוסיף את כתובת השרת לכל URL של סרטון
-      const dataWithFullUrls = response.data.map(member => ({
-        ...member,
-        videos: member.videos.map(video => ({
-          ...video,
-          url: `${SERVER_URL}${video.url}`
-        }))
-      }));
-      return dataWithFullUrls;
+      const response = await fetch(`${SERVER_URL}/family-members-videos`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          setFamilyMembers(data);
+        }
+      }
     } catch (error) {
-      console.error('שגיאה בטעינת הנתונים:', error);
-      return initialFamilyMembers;
+      console.error('Error loading videos data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -43,6 +40,8 @@ const Videos = () => {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const fileInputRef = useRef(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [videoToDelete, setVideoToDelete] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // טעינת המידע בעת טעינת הקומפוננטה
   useEffect(() => {
@@ -311,7 +310,7 @@ const Videos = () => {
               onClick={closeFullscreen}
               style={{ cursor: 'pointer !important' }}
             >
-              <X size={24} className="sm:w-8 sm:h-8" />
+              {React.createElement(X, { size: 24, className: "sm:w-8 sm:h-8" })}
             </button>
           </div>
 
@@ -331,7 +330,7 @@ const Videos = () => {
               onClick={openDeleteConfirm}
               style={{ cursor: 'pointer !important' }}
             >
-              <Trash2 size={24} className="mr-2" />
+              {React.createElement(Trash2, { size: 24, className: "mr-2" })}
               מחק סרטון
             </button>
           </div>
@@ -424,7 +423,7 @@ const Videos = () => {
               : 'bg-red-600 text-white hover:bg-red-700'
           }`}
         >
-          <UploadIcon className="mr-2" size={20} />
+          {React.createElement(UploadIcon, { className: "mr-2", size: 20 })}
           העלאת סרטון
         </button>
         {selectedMembers.length === 0 && (
@@ -465,7 +464,7 @@ const Videos = () => {
                           handleVideoClick(video);
                         }}
                       >
-                        <Video size={24} />
+                        {React.createElement(Video, { size: 24 })}
                       </button>
                       <button
                         className="p-2 bg-white rounded-full text-red-600 hover:text-red-800 transition-colors"
@@ -474,7 +473,7 @@ const Videos = () => {
                           handleDeleteVideo(selectedMembers[0].id, video.url);
                         }}
                       >
-                        <Trash2 size={24} />
+                        {React.createElement(Trash2, { size: 24 })}
                       </button>
                     </div>
                   </div>
@@ -526,7 +525,7 @@ const Videos = () => {
                           handleVideoClick(video);
                         }}
                       >
-                        <Video size={24} />
+                        {React.createElement(Video, { size: 24 })}
                       </button>
                       <button
                         className="p-2 bg-white rounded-full text-red-600 hover:text-red-800 transition-colors"
@@ -535,7 +534,7 @@ const Videos = () => {
                           handleDeleteVideo(member.id, video.url);
                         }}
                       >
-                        <Trash2 size={24} />
+                        {React.createElement(Trash2, { size: 24 })}
                       </button>
                     </div>
                   </div>

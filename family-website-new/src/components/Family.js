@@ -14,7 +14,7 @@ const Family = () => {
   return (
     <div className="p-6 bg-blue-50 rounded-lg">
       <h2 className="text-2xl font-bold mb-4 text-blue-800 flex items-center">
-        <Users className="mr-2" /> בני המשפחה
+        {React.createElement(Users, { className: 'mr-2' })} בני המשפחה
       </h2>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {familyMembers.map(member => (
